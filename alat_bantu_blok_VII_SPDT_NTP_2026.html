@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alat Bantu Blok VII — SPDT NTP 2026</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1f2937;background:#f3f5f7}
+*{box-sizing:border-box}body{margin:0}header{background:#173b57;color:#fff;padding:24px 18px}
+header h1{margin:0 0 8px;font-size:1.35rem}header p{margin:0;color:#e1edf5;max-width:900px}
+main{max-width:1200px;margin:20px auto;padding:0 14px 36px}.notice{background:#fff8e6;border:1px solid #ead39a;padding:12px 14px;border-radius:10px;margin-bottom:16px;font-size:.92rem}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.toolbar button{border:0;border-radius:8px;padding:10px 14px;background:#173b57;color:white;font-weight:600;cursor:pointer}.toolbar button.secondary{background:#e2e8f0;color:#1f2937}.toolbar button.danger{background:#9f2d2d}
+.section{background:white;border:1px solid #dce2e8;border-radius:12px;margin:16px 0;overflow:hidden}.section h2{font-size:1.05rem;margin:0;padding:14px 16px;background:#eaf0f5}.section .sub{padding:8px 16px;color:#5b6570;font-size:.88rem;border-bottom:1px solid #e5e7eb}
+.table-wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:760px}th,td{border-bottom:1px solid #e8ebef;padding:9px 10px;text-align:left;vertical-align:middle}th{font-size:.82rem;color:#475569;background:#f8fafc}td.code{white-space:nowrap;font-variant-numeric:tabular-nums;color:#526170}td.label{min-width:310px}tr.group td{background:#f1f5f9;font-weight:700}tr.subtotal td{background:#f8fafc;font-weight:700}.entry{width:150px;max-width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:7px;text-align:right;font:inherit;font-variant-numeric:tabular-nums}.entry:focus{outline:2px solid #7bb4df;border-color:#3176a8}.muted{font-size:.82rem;color:#64748b}.flag{color:#8a4b08;background:#fff4d6;padding:8px 10px;border-radius:7px;margin:10px 16px;font-size:.85rem}.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;padding:14px}.total-card{border:1px solid #dce2e8;border-radius:9px;padding:12px}.total-card .name{font-size:.85rem;color:#64748b}.total-card .value{font-size:1.2rem;font-weight:750;margin-top:5px;font-variant-numeric:tabular-nums}.footer{font-size:.85rem;color:#5b6570;line-height:1.55;margin-top:18px}
+@media print{body{background:white}header{background:white;color:black;padding:8px 0}header p{color:black}.toolbar,.notice .hide-print{display:none}main{margin:0;max-width:none;padding:0}.section{break-inside:avoid}.entry{border:0;padding:0}.section h2{background:#eee}.table-wrap{overflow:visible}table{min-width:0;font-size:9pt}.entry{width:110px}.footer{font-size:8pt}}
+</style>
+</head>
+<body>
+<header><h1>Alat Bantu Hitung — Blok VII. Ringkasan Pengeluaran</h1><p>SPDT NTP 2026 · Konsumsi Rumah Tangga · Halaman 46–48 · Berjalan lokal/offline di browser</p></header>
+<main>
+<div class="notice"><strong>Catatan penggunaan:</strong> masukkan total dari Blok V dan Blok VI pada kolom yang sesuai. A menggunakan <strong>rupiah</strong>; B menggunakan <strong>ribuan rupiah (000 Rp)</strong>. Aplikasi hanya menjumlahkan subtotal yang jelas dari struktur formulir; aplikasi tidak mengonversi nilai mingguan menjadi tahunan atau nilai bulanan menjadi tahunan. Simpan/konfirmasi nilai periode tersebut sesuai pedoman resmi.</div>
+<div class="toolbar">
+<button onclick="window.print()">Cetak / Simpan PDF</button>
+<button class="secondary" onclick="exportCSV()">Unduh rekap CSV</button>
+<button class="secondary" onclick="downloadJSON()">Cadangkan input (JSON)</button>
+<button class="secondary" onclick="document.getElementById('restoreFile').click()">Pulihkan input (JSON)</button>
+<button class="danger" onclick="clearInputs()">Kosongkan semua</button>
+<input id="restoreFile" type="file" accept=".json,application/json" hidden onchange="restoreJSON(event)">
+</div>
+<div id="app"></div>
+<div class="footer">
+<strong>Aturan yang diterapkan</strong><br>
+• Jumlah A = jumlah kelompok 01 (Makanan, Minuman, dan Tembakau) + kelompok 10 (Penyediaan Makanan dan Minuman/Restoran), dihitung terpisah untuk Seminggu dan Setahun.<br>
+• Jumlah B = jumlah kelompok utama 02, 03, 04, 05, 06, 07, 08, 09, dan 11, dihitung terpisah untuk Sebulan dan Setahun.<br>
+• Baris rincian yang menjadi komponen subtotal tidak dijumlahkan kembali bersama subtotalnya (untuk menghindari hitung ganda).<br>
+• Kuesioner halaman 48 menulis sumber 09.3 Pendidikan Tinggi sebagai Blok VI.09.2. Aplikasi mempertahankan catatan sumber itu dan menandainya untuk verifikasi, tidak mengoreksinya secara otomatis.
+</div>
+</main>
+<script>
+const groupsA = [
+ {code:"01.1.1",name:"Sereal dan Produk Sereal",source:"Blok V.01.1.1 kolom (20)"},
+ {code:"01.1.2",name:"Hewan Hidup, Daging, dan Bagian Lain Hewan Hasil Sembelih",source:"Blok V.01.1.2 kolom (20)"},
+ {code:"01.1.3",name:"Ikan dan Makanan Laut Lainnya",source:"Blok V.01.1.3 kolom (20)"},
+ {code:"01.1.4",name:"Susu, Produk Susu Lainnya, dan Telur",source:"Blok V.01.1.4 kolom (20)"},
+ {code:"01.1.5",name:"Minyak dan Lemak",source:"Blok V.01.1.5 kolom (20)"},
+ {code:"01.1.6",name:"Buah dan Kacang-Kacangan",source:"Blok V.01.1.6 kolom (20)"},
+ {code:"01.1.7",name:"Sayuran, Umbi-Umbian, Pisang Raja, dan Kacang-Kacangan",source:"Blok V.01.1.7 kolom (20)"},
+ {code:"01.1.8",name:"Gula, Kembang Gula, dan Makanan Pencuci Mulut",source:"Blok V.01.1.8 kolom (20)"},
+ {code:"01.1.9",name:"Makanan Siap Saji dan Makanan Olahan Lainnya",source:"Blok V.01.1.9 kolom (20)"},
+ {code:"01.2",name:"Minuman yang Tidak Beralkohol",source:"Blok V.01.2 kolom (20)"},
+ {code:"01.3",name:"Minuman Beralkohol",source:"Blok V.01.3 kolom (20)"},
+ {code:"01.4",name:"Rokok dan Tembakau",source:"Blok V.01.4 kolom (20)"},
+ {code:"10.1",name:"Jasa Pelayanan Makanan dan Minuman",source:"Blok V.10.1 kolom (20)",group10:true}
+];
+const groupsB = [
+ {code:"02.1",name:"Pakaian",source:"Blok VI.02.1 kolom (6) & (7)",parent:"02"},
+ {code:"02.2",name:"Alas Kaki",source:"Blok VI.02.2 kolom (6) & (7)",parent:"02"},
+ {code:"03.1",name:"Sewa dan Kontrak Rumah",source:"Blok VI.03.1 kolom (6) & (7)",parent:"03"},
+ {code:"03.2",name:"Pemeliharaan, Perbaikan, dan Keamanan Tempat Tinggal/Perumahan",source:"Blok VI.03.2 kolom (6) & (7)",parent:"03"},
+ {code:"03.3",name:"Penyediaan Air dan Layanan Perumahan Lainnya",source:"Blok VI.03.3 kolom (6) & (7)",parent:"03"},
+ {code:"03.4",name:"Listrik dan Bahan Bakar Rumah Tangga",source:"Blok VI.03.4 kolom (6) & (7)",parent:"03"},
+ {code:"04.1",name:"Furnitur, Perlengkapan dan Karpet",source:"Blok VI.04.1 kolom (6) & (7)",parent:"04"},
+ {code:"04.2",name:"Tekstil Rumah Tangga",source:"Blok VI.04.2 kolom (6) & (7)",parent:"04"},
+ {code:"04.3",name:"Peralatan Rumah Tangga",source:"Blok VI.04.3 kolom (6) & (7)",parent:"04"},
+ {code:"04.4",name:"Barang Pecah Belah dan Peralatan Makan Minum",source:"Blok VI.04.4 kolom (6) & (7)",parent:"04"},
+ {code:"04.5",name:"Peralatan dan Perlengkapan Perumahan dan Kebun",source:"Blok VI.04.5 kolom (6) & (7)",parent:"04"},
+ {code:"04.6",name:"Barang dan Layanan untuk Pemeliharaan Rumah Tangga Rutin",source:"Blok VI.04.6 kolom (6) & (7)",parent:"04"},
+ {code:"05.1",name:"Obat-Obatan dan Produk Kesehatan",source:"Blok VI.05.1 kolom (6) & (7)",parent:"05"},
+ {code:"05.2",name:"Jasa Rawat Jalan",source:"Blok VI.05.2 kolom (6) & (7)",parent:"05"},
+ {code:"05.3",name:"Layanan Rawat Inap",source:"Blok VI.05.3 kolom (6) & (7)",parent:"05"},
+ {code:"06.1",name:"Pembelian Kendaraan",source:"Blok VI.06.1 kolom (6) & (7)",parent:"06"},
+ {code:"06.2",name:"Pengoperasian Peralatan Transportasi Pribadi",source:"Blok VI.06.2 kolom (6) & (7)",parent:"06"},
+ {code:"06.3",name:"Jasa Angkutan Penumpang",source:"Blok VI.06.3 kolom (6) & (7)",parent:"06"},
+ {code:"06.4",name:"Jasa Pengiriman Barang",source:"Blok VI.06.4 kolom (6) & (7)",parent:"06"},
+ {code:"07.1",name:"Peralatan Informasi dan Komunikasi",source:"Blok VI.07.1 kolom (6) & (7)",parent:"07"},
+ {code:"07.2",name:"Layanan Informasi dan Komunikasi",source:"Blok VI.07.2 kolom (6) & (7)",parent:"07"},
+ {code:"07.4",name:"Jasa Keuangan",source:"Blok VI.07.4 kolom (6) & (7)",parent:"07"},
+ {code:"08.1",name:"Barang Rekreasi Tahan Lama",source:"Blok VI.08.1 kolom (6) & (7)",parent:"08"},
+ {code:"08.2",name:"Barang Rekreasi Lainnya dan Olahraga",source:"Blok VI.08.2 kolom (6) & (7)",parent:"08"},
+ {code:"08.3",name:"Layanan Rekreasi dan Olahraga",source:"Blok VI.08.3 kolom (6) & (7)",parent:"08"},
+ {code:"08.4",name:"Perlengkapan Kebudayaan",source:"Blok VI.08.4 kolom (6) & (7)",parent:"08"},
+ {code:"08.5",name:"Layanan Kebudayaan",source:"Blok VI.08.5 kolom (6) & (7)",parent:"08"},
+ {code:"08.6",name:"Koran, Buku, dan Perlengkapan Sekolah",source:"Blok VI.08.6 kolom (6) & (7)",parent:"08"},
+ {code:"09.1",name:"Pendidikan Dasar dan Anak Usia Dini",source:"Blok VI.09.1 kolom (6) & (7)",parent:"09"},
+ {code:"09.2",name:"Pendidikan Menengah",source:"Blok VI.09.2 kolom (6) & (7)",parent:"09"},
+ {code:"09.3",name:"Pendidikan Tinggi",source:"Tercetak pada kuesioner: Blok VI.09.2 kolom (6) & (7)",parent:"09",flag:"Periksa: sumber pada kuesioner tercetak VI.09.2, sama dengan Pendidikan Menengah."},
+ {code:"09.4",name:"Pendidikan Lainnya",source:"Blok VI.09.4 kolom (6) & (7)",parent:"09"},
+ {code:"11.1",name:"Perawatan Pribadi",source:"Blok VI.11.1 kolom (6) & (7)",parent:"11"},
+ {code:"11.2",name:"Perawatan Pribadi Lainnya",source:"Blok VI.11.2 kolom (6) & (7)",parent:"11"},
+ {code:"11.4",name:"Jasa Lainnya",source:"Blok VI.11.4 kolom (6) & (7)",parent:"11"}
+];
+const parentNames={"02":"Pakaian dan Alas Kaki","03":"Perumahan, Air, Listrik, dan Bahan Bakar Rumah Tangga","04":"Perlengkapan, Peralatan dan Pemeliharaan Rutin Rumah Tangga","05":"Kesehatan","06":"Transportasi","07":"Informasi, Komunikasi, dan Jasa Keuangan","08":"Rekreasi, Olahraga, dan Budaya","09":"Pendidikan","11":"Perawatan Pribadi dan Jasa Lainnya"};
+const fields = [
+ {key:"week",label:"Seminggu",unit:"Rp"},
+ {key:"year",label:"Setahun",unit:"Rp"},
+ {key:"month",label:"Sebulan",unit:"ribu Rp"},
+ {key:"yearB",label:"Setahun",unit:"ribu Rp"}
+];
+function fmt(n){return Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});}
+function input(id,unit){return `<input class="entry" type="number" min="0" step="any" inputmode="decimal" data-id="${id}" data-unit="${unit}" aria-label="${id} ${unit}" placeholder="0" oninput="recalc()">`;}
+function makeRow(item,kind){const cols=kind==="A"?`${input(item.code,"week")}<span class="muted">Rp</span></td><td>${input(item.code,"year")}<span class="muted">Rp</span>`:`${input(item.code,"month")}<span class="muted">000 Rp</span></td><td>${input(item.code,"yearB")}<span class="muted">000 Rp</span>`;
+return `<tr><td class="code">${item.code}</td><td class="label">${item.name}<div class="muted">${item.source}</div>${item.flag?`<div class="flag">${item.flag}</div>`:""}</td><td>${cols}</td></tr>`;}
+function renderA(){return `<section class="section"><h2>A. Bahan Makanan, Makanan Jadi, Minuman, Rokok, dan Tembakau</h2><div class="sub">Dalam Rupiah · kolom ringkasan: Seminggu dan Setahun. Masukkan nilai per kelompok dari sumber yang sudah direkap.</div><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Rincian / sumber</th><th>Seminggu (Rp)</th><th>Setahun (Rp)</th></tr></thead><tbody><tr class="group"><td>01</td><td colspan="3">Makanan, Minuman, dan Tembakau</td></tr>${groupsA.filter(x=>!x.group10).map(x=>makeRow(x,"A")).join("")}<tr class="subtotal"><td>01</td><td>Subtotal kelompok 01 — dihitung dari rincian di atas</td><td id="a01week">0</td><td id="a01year">0</td></tr><tr class="group"><td>10</td><td colspan="3">Penyediaan Makanan dan Minuman/Restoran</td></tr>${makeRow(groupsA.find(x=>x.group10),"A")}<tr class="subtotal"><td>Jumlah A</td><td>Jumlah A (01 + 10)</td><td id="totalAweek">0</td><td id="totalAyear">0</td></tr></tbody></table></div></section>`;}
+function renderB(){let out=`<section class="section"><h2>B. Bukan Makanan</h2><div class="sub">Dalam Ribuan Rupiah (000 Rp) · kolom ringkasan: Sebulan dan Setahun. Masukkan nilai dari Blok VI kolom (6) dan (7).</div><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Rincian / sumber</th><th>Sebulan (000 Rp)</th><th>Setahun (000 Rp)</th></tr></thead><tbody>`;
+let parents=[...new Set(groupsB.map(x=>x.parent))];
+for(const p of parents){out+=`<tr class="group"><td>${p}</td><td colspan="3">${parentNames[p]}</td></tr>`;out+=groupsB.filter(x=>x.parent===p).map(x=>makeRow(x,"B")).join("");out+=`<tr class="subtotal"><td>${p}</td><td>Subtotal ${p} — dihitung dari rincian di atas</td><td id="b${p}month">0</td><td id="b${p}yearB">0</td></tr>`;}
+out+=`<tr class="subtotal"><td>Jumlah B</td><td>Jumlah B (02+03+04+05+06+07+08+09+11)</td><td id="totalBmonth">0</td><td id="totalByear">0</td></tr></tbody></table></div></section>`;
+return out;}
+document.getElementById("app").innerHTML=renderA()+renderB();
+function val(code,unit){const el=document.querySelector(`[data-id="${CSS.escape(code)}"][data-unit="${unit}"]`);return el&&el.value!==""?Number(el.value):0;}
+function sum(items,unit){return items.reduce((a,x)=>a+val(x.code,unit),0);}
+function setText(id,n){document.getElementById(id).textContent=fmt(n);}
+function recalc(){
+ const aFood=groupsA.filter(x=>!x.group10);let a01w=sum(aFood,"week"),a01y=sum(aFood,"year");
+ setText("a01week",a01w);setText("a01year",a01y);
+ setText("totalAweek",a01w+val("10.1","week"));setText("totalAyear",a01y+val("10.1","year"));
+ let bm=0,by=0;
+ for(const p of Object.keys(parentNames)){const items=groupsB.filter(x=>x.parent===p);const m=sum(items,"month"),y=sum(items,"yearB");setText("b"+p+"month",m);setText("b"+p+"yearB",y);bm+=m;by+=y;}
+ setText("totalBmonth",bm);setText("totalByear",by);
+}
+function allInputs(){return [...document.querySelectorAll("input[data-id]")];}
+function clearInputs(){if(!confirm("Kosongkan semua input? Tindakan ini tidak dapat dibatalkan."))return;allInputs().forEach(x=>x.value="");recalc();}
+function snapshot(){let o={app:"SPDT NTP 2026 Blok VII",version:1,createdAt:new Date().toISOString(),values:{}};allInputs().forEach(x=>{if(x.value!=="")o.values[x.dataset.id+"|"+x.dataset.unit]=x.value;});return o;}
+function downloadBlob(name,content,type){const a=document.createElement("a");const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function downloadJSON(){downloadBlob("SPDT26K_blokVII_input.json",JSON.stringify(snapshot(),null,2),"application/json");}
+function restoreJSON(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!d.values)throw new Error("Format tidak sesuai");allInputs().forEach(x=>x.value=d.values[x.dataset.id+"|"+x.dataset.unit]??"");recalc();alert("Input berhasil dipulihkan.");}catch(err){alert("File JSON tidak valid atau bukan cadangan aplikasi ini.");}e.target.value="";};reader.readAsText(f);}
+function exportCSV(){const rows=[["Blok","Kode","Rincian","Sumber","Periode","Satuan","Nilai input"]];groupsA.forEach(x=>{["week","year"].forEach((u,i)=>rows.push(["A",x.code,x.name,x.source,i===0?"Seminggu":"Setahun","Rupiah",val(x.code,u)]));});groupsB.forEach(x=>{["month","yearB"].forEach((u,i)=>rows.push(["B",x.code,x.name,x.source,i===0?"Sebulan":"Setahun","Ribuan Rupiah",val(x.code,u)]));});const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(";")).join("\r\n");downloadBlob("SPDT26K_blokVII_rekap.csv","\ufeff"+csv,"text/csv;charset=utf-8");}
+recalc();
+</script>
+</body>
+</html>
