@@ -18,7 +18,7 @@ main{max-width:1200px;margin:20px auto;padding:0 14px 36px}.notice{background:#f
 <body>
 <header><h1>Alat Bantu Hitung — Blok VII. Ringkasan Pengeluaran</h1><p>SPDT NTP 2026 · Konsumsi Rumah Tangga · Halaman 46–48 · Berjalan lokal/offline di browser</p></header>
 <main>
-<div class="notice"><strong>Catatan penggunaan:</strong> masukkan total dari Blok V dan Blok VI pada kolom yang sesuai. A menggunakan <strong>rupiah</strong>; B menggunakan <strong>ribuan rupiah (000 Rp)</strong>. Aplikasi hanya menjumlahkan subtotal yang jelas dari struktur formulir; aplikasi tidak mengonversi nilai mingguan menjadi tahunan atau nilai bulanan menjadi tahunan. Simpan/konfirmasi nilai periode tersebut sesuai pedoman resmi.</div>
+<div class="notice"><strong>Catatan penggunaan:</strong> masukkan total dari Blok V dan Blok VI pada kolom yang sesuai. A menggunakan <strong>rupiah</strong> untuk periode seminggu saja; B menggunakan <strong>ribuan rupiah (000 Rp)</strong>. Aplikasi hanya menjumlahkan subtotal yang jelas dari struktur formulir; aplikasi tidak mengonversi nilai mingguan menjadi tahunan atau nilai bulanan menjadi tahunan. Simpan/konfirmasi nilai periode tersebut sesuai pedoman resmi.</div>
 <div class="toolbar">
 <button onclick="window.print()">Cetak / Simpan PDF</button>
 <button class="secondary" onclick="exportCSV()">Unduh rekap CSV</button>
@@ -30,7 +30,7 @@ main{max-width:1200px;margin:20px auto;padding:0 14px 36px}.notice{background:#f
 <div id="app"></div>
 <div class="footer">
 <strong>Aturan yang diterapkan</strong><br>
-• Jumlah A = jumlah kelompok 01 (Makanan, Minuman, dan Tembakau) + kelompok 10 (Penyediaan Makanan dan Minuman/Restoran), dihitung terpisah untuk Seminggu dan Setahun.<br>
+• Jumlah A = jumlah kelompok 01 (Makanan, Minuman, dan Tembakau) + kelompok 10 (Penyediaan Makanan dan Minuman/Restoran), untuk periode Seminggu saja.<br>
 • Jumlah B = jumlah kelompok utama 02, 03, 04, 05, 06, 07, 08, 09, dan 11, dihitung terpisah untuk Sebulan dan Setahun.<br>
 • Baris rincian yang menjadi komponen subtotal tidak dijumlahkan kembali bersama subtotalnya (untuk menghindari hitung ganda).<br>
 • Kuesioner halaman 48 menulis sumber 09.3 Pendidikan Tinggi sebagai Blok VI.09.2. Aplikasi mempertahankan catatan sumber itu dan menandainya untuk verifikasi, tidak mengoreksinya secara otomatis.
@@ -98,9 +98,13 @@ const fields = [
 ];
 function fmt(n){return Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});}
 function input(id,unit){return `<input class="entry" type="number" min="0" step="any" inputmode="decimal" data-id="${id}" data-unit="${unit}" aria-label="${id} ${unit}" placeholder="0" oninput="recalc()">`;}
-function makeRow(item,kind){const cols=kind==="A"?`${input(item.code,"week")}<span class="muted">Rp</span></td><td>${input(item.code,"year")}<span class="muted">Rp</span>`:`${input(item.code,"month")}<span class="muted">000 Rp</span></td><td>${input(item.code,"yearB")}<span class="muted">000 Rp</span>`;
-return `<tr><td class="code">${item.code}</td><td class="label">${item.name}<div class="muted">${item.source}</div>${item.flag?`<div class="flag">${item.flag}</div>`:""}</td><td>${cols}</td></tr>`;}
-function renderA(){return `<section class="section"><h2>A. Bahan Makanan, Makanan Jadi, Minuman, Rokok, dan Tembakau</h2><div class="sub">Dalam Rupiah · kolom ringkasan: Seminggu dan Setahun. Masukkan nilai per kelompok dari sumber yang sudah direkap.</div><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Rincian / sumber</th><th>Seminggu (Rp)</th><th>Setahun (Rp)</th></tr></thead><tbody><tr class="group"><td>01</td><td colspan="3">Makanan, Minuman, dan Tembakau</td></tr>${groupsA.filter(x=>!x.group10).map(x=>makeRow(x,"A")).join("")}<tr class="subtotal"><td>01</td><td>Subtotal kelompok 01 — dihitung dari rincian di atas</td><td id="a01week">0</td><td id="a01year">0</td></tr><tr class="group"><td>10</td><td colspan="3">Penyediaan Makanan dan Minuman/Restoran</td></tr>${makeRow(groupsA.find(x=>x.group10),"A")}<tr class="subtotal"><td>Jumlah A</td><td>Jumlah A (01 + 10)</td><td id="totalAweek">0</td><td id="totalAyear">0</td></tr></tbody></table></div></section>`;}
+function makeRow(item,kind){
+const cols=kind==="A"
+  ? `${input(item.code,"week")}<span class="muted">Rp</span>`
+  : `${input(item.code,"month")}<span class="muted">000 Rp</span></td><td>${input(item.code,"yearB")}<span class="muted">000 Rp</span>`;
+return `<tr><td class="code">${item.code}</td><td class="label">${item.name}<div class="muted">${item.source}</div>${item.flag?`<div class="flag">${item.flag}</div>`:""}</td><td>${cols}</td></tr>`;
+}
+function renderA(){return `<section class="section"><h2>A. Bahan Makanan, Makanan Jadi, Minuman, Rokok, dan Tembakau</h2><div class="sub">Dalam Rupiah · hanya periode Seminggu, mengikuti halaman 46 kuesioner. Input Setahun untuk kelompok makanan tidak disediakan.</div><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Rincian / sumber</th><th>Seminggu (Rp)</th></tr></thead><tbody><tr class="group"><td>01</td><td colspan="2">Makanan, Minuman, dan Tembakau</td></tr>${groupsA.filter(x=>!x.group10).map(x=>makeRow(x,"A")).join("")}<tr class="subtotal"><td>01</td><td>Subtotal kelompok 01 — dihitung dari rincian di atas</td><td id="a01week">0</td></tr><tr class="group"><td>10</td><td colspan="2">Penyediaan Makanan dan Minuman/Restoran</td></tr>${makeRow(groupsA.find(x=>x.group10),"A")}<tr class="subtotal"><td>Jumlah A</td><td>Jumlah A (01 + 10)</td><td id="totalAweek">0</td></tr></tbody></table></div></section>`;}
 function renderB(){let out=`<section class="section"><h2>B. Bukan Makanan</h2><div class="sub">Dalam Ribuan Rupiah (000 Rp) · kolom ringkasan: Sebulan dan Setahun. Masukkan nilai dari Blok VI kolom (6) dan (7).</div><div class="table-wrap"><table><thead><tr><th>Kode</th><th>Rincian / sumber</th><th>Sebulan (000 Rp)</th><th>Setahun (000 Rp)</th></tr></thead><tbody>`;
 let parents=[...new Set(groupsB.map(x=>x.parent))];
 for(const p of parents){out+=`<tr class="group"><td>${p}</td><td colspan="3">${parentNames[p]}</td></tr>`;out+=groupsB.filter(x=>x.parent===p).map(x=>makeRow(x,"B")).join("");out+=`<tr class="subtotal"><td>${p}</td><td>Subtotal ${p} — dihitung dari rincian di atas</td><td id="b${p}month">0</td><td id="b${p}yearB">0</td></tr>`;}
@@ -112,8 +116,8 @@ function sum(items,unit){return items.reduce((a,x)=>a+val(x.code,unit),0);}
 function setText(id,n){document.getElementById(id).textContent=fmt(n);}
 function recalc(){
  const aFood=groupsA.filter(x=>!x.group10);let a01w=sum(aFood,"week"),a01y=sum(aFood,"year");
- setText("a01week",a01w);setText("a01year",a01y);
- setText("totalAweek",a01w+val("10.1","week"));setText("totalAyear",a01y+val("10.1","year"));
+ setText("a01week",a01w);
+ setText("totalAweek",a01w+val("10.1","week"));
  let bm=0,by=0;
  for(const p of Object.keys(parentNames)){const items=groupsB.filter(x=>x.parent===p);const m=sum(items,"month"),y=sum(items,"yearB");setText("b"+p+"month",m);setText("b"+p+"yearB",y);bm+=m;by+=y;}
  setText("totalBmonth",bm);setText("totalByear",by);
@@ -124,7 +128,7 @@ function snapshot(){let o={app:"SPDT NTP 2026 Blok VII",version:1,createdAt:new 
 function downloadBlob(name,content,type){const a=document.createElement("a");const url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function downloadJSON(){downloadBlob("SPDT26K_blokVII_input.json",JSON.stringify(snapshot(),null,2),"application/json");}
 function restoreJSON(e){const f=e.target.files[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!d.values)throw new Error("Format tidak sesuai");allInputs().forEach(x=>x.value=d.values[x.dataset.id+"|"+x.dataset.unit]??"");recalc();alert("Input berhasil dipulihkan.");}catch(err){alert("File JSON tidak valid atau bukan cadangan aplikasi ini.");}e.target.value="";};reader.readAsText(f);}
-function exportCSV(){const rows=[["Blok","Kode","Rincian","Sumber","Periode","Satuan","Nilai input"]];groupsA.forEach(x=>{["week","year"].forEach((u,i)=>rows.push(["A",x.code,x.name,x.source,i===0?"Seminggu":"Setahun","Rupiah",val(x.code,u)]));});groupsB.forEach(x=>{["month","yearB"].forEach((u,i)=>rows.push(["B",x.code,x.name,x.source,i===0?"Sebulan":"Setahun","Ribuan Rupiah",val(x.code,u)]));});const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(";")).join("\r\n");downloadBlob("SPDT26K_blokVII_rekap.csv","\ufeff"+csv,"text/csv;charset=utf-8");}
+function exportCSV(){const rows=[["Blok","Kode","Rincian","Sumber","Periode","Satuan","Nilai input"]];groupsA.forEach(x=>{rows.push(["A",x.code,x.name,x.source,"Seminggu","Rupiah",val(x.code,"week")]);});groupsB.forEach(x=>{["month","yearB"].forEach((u,i)=>rows.push(["B",x.code,x.name,x.source,i===0?"Sebulan":"Setahun","Ribuan Rupiah",val(x.code,u)]));});const csv=rows.map(r=>r.map(v=>`"${String(v).replaceAll('"','""')}"`).join(";")).join("\r\n");downloadBlob("SPDT26K_blokVII_rekap.csv","\ufeff"+csv,"text/csv;charset=utf-8");}
 recalc();
 </script>
 </body>
